@@ -4,11 +4,11 @@ public class Board {
 
 	// Board position statuses.
 	private static final int EMPTY = 0;
-	private static final int X = 1; // Player X
-	private static final int O = 2; // Player O
+	public static final int X = 1; // Player X
+	public static final int O = 2; // Player O
 	// End game statuses.
-	private static final int INCOMPLETE = 10;
-	private static final int TIE = 11;
+	public static final int INCOMPLETE = 10;
+	public static final int TIE = 11;
 	// Instance details.
 	private int[][] board;
 	private int numberOfMoves;
@@ -39,9 +39,30 @@ public class Board {
 	}
 
 	/**
+	 * Makes a move by changing the corresponding square on the board.
+	 * 
+	 * @param i
+	 *            - i coordinate
+	 * @param j
+	 *            - j coordinate
+	 * @param player
+	 *            - ID of player (O or X)
+	 * @return - True if move is valid, false otherwise.
+	 */
+	public boolean makeMove(int i, int j, int player) {
+
+		if (board[i][j] != Board.EMPTY) {
+			return false;
+		}
+
+		board[i][j] = player;
+		return true;
+	}
+
+	/**
 	 * Check if the game has ended: 1) Winner 2) Full board
 	 */
-	private int checkGameOver() {
+	public int checkGameOver() {
 
 		// Loop through all values.
 		for (int i = 0; i < 3; ++i) {

@@ -17,7 +17,7 @@ public class Main {
 			exit = manager.startScreen();
 			System.out.println();
 		} while (!exit);
-		
+
 	}
 
 }

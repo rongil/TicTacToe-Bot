@@ -27,9 +27,6 @@ public class GameManager {
 	private static final int COMPUTER_VS_HUMAN_OPTION = 2;
 	private static final int COMPUTER_VS_COMPUTER_OPTION = 3;
 
-	// Error Message
-	private static final String INPUT_ERROR_MESSAGE = "Invalid Input.";
-
 	public GameManager() {
 		logger.log(Level.INFO, "Game manager created successfully.");
 	}
@@ -45,24 +42,7 @@ public class GameManager {
 		System.out.println(Integer.toString(NEW_GAME_OPTION) + ") " + NEW_GAME);
 		System.out.println(Integer.toString(EXIT_OPTION) + ") " + EXIT);
 
-		int selection = 0;
-		// Loop through user input until valid.
-		try {
-			// Wait for valid user input.
-			// Make sure it is an integer value.
-			while (!Main.scanner.hasNextInt()) {
-				System.out.println(INPUT_ERROR_MESSAGE);
-				Main.scanner.next();
-			}
-			selection = Main.scanner.nextInt();
-
-		} catch (Exception e) {
-			logger.log(Level.SEVERE, e.toString());
-			System.out
-					.println("The program encountered an error while processing your input!");
-			return false;
-		}
-
+		int selection = Main.getNextIntegerInput();
 		switch (selection) {
 		case NEW_GAME_OPTION:
 			newGameScreen();
@@ -70,7 +50,7 @@ public class GameManager {
 		case EXIT_OPTION:
 			return true;
 		default:
-			System.out.println(INPUT_ERROR_MESSAGE);
+			System.out.println(Main.INPUT_ERROR_MESSAGE);
 			return false;
 		}
 
@@ -82,6 +62,7 @@ public class GameManager {
 	 * Screen to select game type.
 	 */
 	private void newGameScreen() {
+
 		// Game type options.
 		System.out.println();
 		System.out.println("What type of game would you like to play/watch?");
@@ -92,24 +73,7 @@ public class GameManager {
 		System.out.println(Integer.toString(COMPUTER_VS_COMPUTER_OPTION) + ") "
 				+ COMPUTER_VS_COMPUTER);
 
-		int selection;
-		// Loop through user input until valid.
-		try {
-			// Wait for valid user input.
-			// Make sure it is an integer value.
-			while (!Main.scanner.hasNextInt()) {
-				System.out.println(INPUT_ERROR_MESSAGE);
-				Main.scanner.next();
-			}
-			selection = Main.scanner.nextInt();
-
-		} catch (Exception e) {
-			logger.log(Level.SEVERE, e.toString());
-			System.out
-					.println("The program encountered an error while processing your input!");
-			return;
-		}
-
+		int selection = Main.getNextIntegerInput();
 		// Passes the two player types.
 		switch (selection) {
 		case HUMAN_VS_HUMAN_OPTION:
@@ -122,7 +86,7 @@ public class GameManager {
 			playGame(new ComputerPlayer(Board.X), new ComputerPlayer(Board.O));
 			break;
 		default:
-			System.out.println(INPUT_ERROR_MESSAGE);
+			System.out.println(Main.INPUT_ERROR_MESSAGE);
 		}
 
 	}
@@ -136,26 +100,34 @@ public class GameManager {
 	 */
 	private void playGame(Player playerOne, Player playerTwo) {
 
-		// Create a new board.
+		// Create a new board and display it.
 		Board board = new Board();
+		board.showBoard();
 
 		// Randomly choose the starting player.
 		Random random = new Random();
 		int turn = random.nextInt(2); // Chooses 0 or 1
 
-		int result;
+		boolean validMove;
 		int[] coordinate;
+		int result;
 		do {
 			switch (turn) {
 			case 0:
-				coordinate = playerOne.getMove();
-				board.makeMove(coordinate[0], coordinate[1],
-						playerOne.getPlayerID());
+				// Loop until a valid move is provided.
+				do {
+					coordinate = playerOne.getMove();
+					validMove = board.makeMove(coordinate[0], coordinate[1],
+							playerOne.getPlayerID());
+				} while (!validMove);
 				break;
 			case 1:
-				coordinate = playerTwo.getMove();
-				board.makeMove(coordinate[0], coordinate[1],
-						playerTwo.getPlayerID());
+				// Loop until a valid move is provided.
+				do {
+					coordinate = playerTwo.getMove();
+					validMove = board.makeMove(coordinate[0], coordinate[1],
+							playerTwo.getPlayerID());
+				} while (!validMove);
 				break;
 			}
 
@@ -168,6 +140,7 @@ public class GameManager {
 
 		} while (result == Board.INCOMPLETE);
 
+		System.out.println();
 		switch (result) {
 		case Board.TIE:
 			System.out.println("It is a tie!");
@@ -178,11 +151,13 @@ public class GameManager {
 		case Board.O:
 			System.out.println("Player O wins!");
 			break;
+		default:
+			System.out.println("An error has occurred!");
+			break;
 		}
 
 		// Add blank line...
 		System.out.println();
 
 	}
-
 }

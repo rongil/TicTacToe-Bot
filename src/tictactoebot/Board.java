@@ -51,7 +51,9 @@ public class Board {
 	 */
 	public boolean makeMove(int i, int j, int player) {
 
-		if (board[i][j] != Board.EMPTY) {
+		// Check to see if the move is valid.
+		if (i < 0 || i > 3 || j < 0 || j > 3 || board[i][j] != Board.EMPTY) {
+			System.out.println("Move is not valid.");
 			return false;
 		}
 
@@ -64,21 +66,27 @@ public class Board {
 	 */
 	public int checkGameOver() {
 
+		// NOTE: By comparing positions between themselves and making sure they
+		// are not empty, the player does not need to be passed in as an
+		// argument.
+
 		// Loop through all values.
 		for (int i = 0; i < 3; ++i) {
 			// Split conditionals to allow distinguishing the type of win.
 			// Check row win.
-			if (board[i][0] == board[i][1] && board[i][1] == board[i][2]) {
+			if (board[i][0] != EMPTY && board[i][0] == board[i][1]
+					&& board[i][1] == board[i][2]) {
 				return board[i][0];
 				// Check column win.
-			} else if (board[0][i] == board[1][i] && board[1][i] == board[2][i]) {
+			} else if (board[0][i] != EMPTY && board[0][i] == board[1][i]
+					&& board[1][i] == board[2][i]) {
 				return board[0][i];
 			}
 		}
 
 		// Check diagonals.
-		if ((board[0][0] == board[1][1] && board[1][1] == board[2][2])
-				|| (board[2][0] == board[1][1] && board[1][1] == board[0][2])) {
+		if (board[1][1] != EMPTY
+				&& ((board[0][0] == board[1][1] && board[1][1] == board[2][2]) || (board[2][0] == board[1][1] && board[1][1] == board[0][2]))) {
 			return board[1][1];
 		}
 
@@ -104,8 +112,14 @@ public class Board {
 	 */
 	public void showBoard() {
 
-		// Top border
-		System.out.println("----------");
+		System.out.println();
+		// Top border and axis
+		System.out.print(" ");
+		for (int x = 1; x < 4; ++x) {
+			System.out.print(" " + Integer.toString(x) + "  ");
+		}
+		System.out.println();
+		System.out.println("-------------");
 
 		// Row loop
 		for (int i = 0; i < 3; ++i) {
@@ -117,15 +131,32 @@ public class Board {
 			for (int j = 0; j < 3; ++j) {
 
 				// Values and right borders
-				System.out.print(board[i][j] + '|');
+				String value;
+				// NOTE: The i, j values are printed in reverse compared to how
+				// they are stored.
+				switch (board[j][i]) {
+				case EMPTY:
+					value = "   ";
+					break;
+				case O:
+					value = " O ";
+					break;
+				case X:
+					value = " X ";
+					break;
+				default:
+					value = "Err";
+				}
+				System.out.print(value + '|');
 			}
 
-			// Insert newline
-			System.out.println();
+			// Right axis
+			System.out.println(" " + Integer.toString(i + 1));
 			// Bottom borders
-			System.out.println("----------");
+			System.out.println("-------------");
 
 		}
+
 	}
 
 }

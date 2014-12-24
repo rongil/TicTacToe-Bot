@@ -117,10 +117,8 @@ public class Board {
 	/**
 	 * Makes a move by changing the corresponding square on the board.
 	 * 
-	 * @param i
-	 *            - i coordinate
-	 * @param j
-	 *            - j coordinate
+	 * @param move
+	 *            - the move to be played
 	 * @param player
 	 *            - ID of player (O or X)
 	 * @return - True if move is valid, false otherwise.
@@ -139,6 +137,15 @@ public class Board {
 		return true;
 	}
 
+	/**
+	 * Makes a move on a new board instance and returns the new instance.
+	 * 
+	 * @param move
+	 *            - the move to be played
+	 * @param player
+	 *            - the player making the move
+	 * @return - the new board instance with the move that was played
+	 */
 	public Board testMove(Move move, int player) {
 
 		Board testBoard = new Board(this);
@@ -280,7 +287,7 @@ public class Board {
 
 		@Override
 		public String toString() {
-			return x.toString() + ", " + y.toString();
+			return "(" + x.toString() + ", " + y.toString() + ")";
 		}
 
 	}

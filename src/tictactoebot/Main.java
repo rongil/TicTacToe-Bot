@@ -42,6 +42,8 @@ public class Main {
 	 * Loops to obtain the next valid integer input. Displays a custom message
 	 * (provided as a parameter) on each failed attempt.
 	 * 
+	 * @param message
+	 *            - the custom message to print upon failure
 	 * @return - the next valid integer input
 	 */
 	public static final int getNextIntegerInput(String message) {

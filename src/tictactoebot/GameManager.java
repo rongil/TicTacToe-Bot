@@ -4,6 +4,7 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import tictactoebot.Board.Move;
 import tictactoebot.Player.ComputerPlayer;
 import tictactoebot.Player.HumanPlayer;
 
@@ -109,23 +110,25 @@ public class GameManager {
 		int turn = random.nextInt(2); // Chooses 0 or 1
 
 		boolean validMove;
-		int[] coordinate;
+		Move coordinates;
 		int result;
 		do {
 			switch (turn) {
 			case 0:
 				// Loop until a valid move is provided.
 				do {
-					coordinate = playerOne.getMove();
-					validMove = board.makeMove(coordinate[0], coordinate[1],
+					playerOne.printPlayerTurn();
+					coordinates = playerOne.getMove(board);
+					validMove = board.makeMove(coordinates,
 							playerOne.getPlayerID());
 				} while (!validMove);
 				break;
 			case 1:
 				// Loop until a valid move is provided.
 				do {
-					coordinate = playerTwo.getMove();
-					validMove = board.makeMove(coordinate[0], coordinate[1],
+					playerTwo.printPlayerTurn();
+					coordinates = playerTwo.getMove(board);
+					validMove = board.makeMove(coordinates,
 							playerTwo.getPlayerID());
 				} while (!validMove);
 				break;

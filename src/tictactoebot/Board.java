@@ -2,6 +2,12 @@ package tictactoebot;
 
 import java.util.HashSet;
 
+/**
+ * Class to represent a game board.
+ * 
+ * @author rongil
+ *
+ */
 public class Board {
 
 	// Board position statuses.

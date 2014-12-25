@@ -2,6 +2,13 @@ package tictactoebot;
 
 import java.util.Scanner;
 
+/**
+ * Main class to start program execution. Loops GameManager until the user
+ * requests to exit.
+ * 
+ * @author rongil
+ *
+ */
 public class Main {
 
 	private static Scanner scanner;

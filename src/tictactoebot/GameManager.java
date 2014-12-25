@@ -8,6 +8,13 @@ import tictactoebot.Board.Move;
 import tictactoebot.Player.ComputerPlayer;
 import tictactoebot.Player.HumanPlayer;
 
+/**
+ * Manages the game prompts and execution. Everything is directly or indirectly
+ * started by this class.
+ * 
+ * @author rongil
+ *
+ */
 public class GameManager {
 
 	private final Logger logger = Logger.getLogger(getClass().getName());
@@ -16,8 +23,8 @@ public class GameManager {
 	private static final String NEW_GAME = "New Game";
 	private static final String EXIT = "Exit";
 	// Menu Option Numbers
-	private static final int EXIT_OPTION = 0;
 	private static final int NEW_GAME_OPTION = 1;
+	private static final int EXIT_OPTION = 2;
 
 	// Game Type Names
 	private static final String HUMAN_VS_HUMAN = "Human vs. Human";

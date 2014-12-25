@@ -1,9 +1,24 @@
 package tictactoebot;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import tictactoebot.Board.Move;
 
+/**
+ * Abstract superclass for all player types. Implements helpful methods
+ * pertinent to players and places a requirement for players to have certain
+ * methods.
+ * 
+ * @author rongil
+ *
+ */
 public abstract class Player {
 
 	protected final Logger logger = Logger.getLogger(getClass().getName());
@@ -86,6 +101,12 @@ public abstract class Player {
 	// Necessary for every player...
 	public abstract Move getMove(Board board);
 
+	/**
+	 * Implements methods used for a human player.
+	 * 
+	 * @author rongil
+	 *
+	 */
 	public static class HumanPlayer extends Player {
 
 		public HumanPlayer(int player) {
@@ -108,209 +129,52 @@ public abstract class Player {
 		}
 	}
 
+	/**
+	 * Implements methods used for a computer player. Runs a thread with a
+	 * timeout in order to get a move.
+	 * 
+	 * @author rongil
+	 *
+	 */
 	public static class ComputerPlayer extends Player {
 
-		// Search types
-		private static final int MINIMAX_ALPHA_BETA = 0;
-		private static final int NEGAMAX_ALPHA_BETA = 1;
-
-		// Actual search method used.
-		// Can be made variable during runtime in the future.
-		private static final int searchType = NEGAMAX_ALPHA_BETA;
+		private ExecutorService executor;
 
 		public ComputerPlayer(int player) {
 			super(player, "Computer");
+			// The executor to run the thread for the optimal move search.
+			executor = Executors.newSingleThreadExecutor();
 		}
 
+		/**
+		 * Runs a thread to search for the best possible move given a time
+		 * constraint (set by Search.TIMEOUT) for searching.
+		 * 
+		 * @param - The current board
+		 * @return - The optimal move found given the time constraint.
+		 */
 		public Move getMove(Board board) {
 
-			Move move = null;
-			switch (searchType) {
-			case MINIMAX_ALPHA_BETA:
-				System.out.println("Running Minimax w/ Alpha-Beta Pruning...");
-				move = minimaxAlphaBeta(board);
-				break;
-			case NEGAMAX_ALPHA_BETA:
-				System.out.println("Running Negamax w/ Alpha-Beta Pruning...");
-				move = negamaxAlphaBeta(board);
-				break;
-			default:
-				System.out.println("An invalid search method is being used.");
-				System.exit(1);
+			// Creates new search task (which implements iterative deepening)
+			Search search = new Search(board, this);
+			Future<Move> future = executor.submit(search);
+
+			Move bestMove;
+			try {
+				bestMove = future.get(Search.TIMEOUT, TimeUnit.SECONDS);
+			} catch (TimeoutException e) {
+				bestMove = search.getBestMove();
+			} catch (InterruptedException e) {
+				logger.log(Level.WARNING,
+						"The thread was interrupted.\n" + e.toString());
+				bestMove = search.getBestMove();
+			} catch (ExecutionException e) {
+				logger.log(Level.WARNING,
+						"There was an error in the execution.\n" + e.toString());
+				bestMove = search.getBestMove();
 			}
 
-			return move;
-		}
-
-		/**
-		 * Method called to run MiniMax search with Alpha-Beta Pruning.
-		 * 
-		 * @param board
-		 *            - the current board
-		 * @return - the optimal move given the depth restriction
-		 */
-		private Move minimaxAlphaBeta(Board board) {
-
-			int depth = 10;
-
-			int newValue;
-			int maxValue = Integer.MIN_VALUE;
-			Move bestMove = null;
-			for (Move move : board.getValidMoves()) {
-				newValue = minimaxAlphaBeta(
-						board.testMove(move, this.getPlayerID()), depth - 1,
-						Integer.MIN_VALUE, Integer.MAX_VALUE, true);
-				if (newValue > maxValue) {
-					maxValue = newValue;
-					bestMove = move;
-				}
-			}
 			return bestMove;
-
-		}
-
-		/**
-		 * Helper method for MiniMax with Alpha-Beta pruning that recursively
-		 * calls itself and returns the heuristic value of a certain move. The
-		 * move is implicitly passed in as a board which had the move already
-		 * occur.
-		 * 
-		 * @param board
-		 *            - the board with the move being analyzed
-		 * @param depth
-		 *            - current depth of the search
-		 * @param alpha
-		 * @param beta
-		 * @param maximizingPlayer
-		 *            - the person who's move it is on this level
-		 * @return - heuristic value of the move
-		 */
-		private int minimaxAlphaBeta(Board board, int depth, int alpha,
-				int beta, boolean maximizingPlayer) {
-
-			int result = board.checkGameOver();
-			if (result != Board.INCOMPLETE || depth == 0) {
-				// Subtracts number of moves to favor faster wins and slower
-				// losses. Since the number of moves will be at most 9, the
-				// outcomes do not overlap.
-				if (result == Board.TIE) {
-					return 0 - board.getNumberOfMoves();
-				} else if (result == this.getPlayerID()) {
-					return 10 - board.getNumberOfMoves();
-				} else {
-					return -10 - board.getNumberOfMoves();
-				}
-			}
-
-			if (maximizingPlayer) {
-				int newAlpha = Integer.MIN_VALUE;
-				for (Move move : board.getValidMoves()) {
-					newAlpha = Math.max(
-							newAlpha,
-							minimaxAlphaBeta(
-									board.testMove(move, this.getPlayerID()),
-									depth - 1, newAlpha, beta, false));
-					if (beta <= newAlpha) {
-						break; // Beta cutoff
-					}
-				}
-				return newAlpha;
-
-			} else {
-				int newBeta = Integer.MAX_VALUE;
-				for (Move move : board.getValidMoves()) {
-					newBeta = Math.min(
-							newBeta,
-							minimaxAlphaBeta(
-									board.testMove(move,
-											this.getOtherPlayerID()),
-									depth - 1, alpha, newBeta, true));
-					if (newBeta <= alpha) {
-						break; // Alpha cutoff
-					}
-				}
-				return newBeta;
-
-			}
-
-		}
-
-		/**
-		 * Method called to run NegaMax with Alpha-Beta pruning.
-		 * 
-		 * @param board
-		 *            - the current board
-		 * @return - the optimal move given the depth restriction
-		 */
-		private Move negamaxAlphaBeta(Board board) {
-
-			int depth = 10;
-
-			int newValue;
-			int bestValue = Integer.MIN_VALUE;
-			Move bestMove = null;
-			for (Move move : board.getValidMoves()) {
-				newValue = negamaxAlphaBeta(board, depth - 1,
-						Integer.MIN_VALUE, Integer.MAX_VALUE,
-						this.getPlayerID());
-				if (newValue > bestValue) {
-					bestValue = newValue;
-					bestMove = move;
-				}
-			}
-			return bestMove;
-
-		}
-
-		/**
-		 * Helper method for NegaMax with Alpha-Beta pruning that recursively
-		 * calls itself and returns the heuristic value of a certain move. The
-		 * move is implicitly passed in as a board which had the move already
-		 * occur.
-		 * 
-		 * @param board
-		 *            - the board with the move being analyzed
-		 * @param depth
-		 *            - current depth of the search
-		 * @param alpha
-		 * @param beta
-		 * @param playerID
-		 *            - the person who's move it is on this level
-		 * @return - heuristic value of the move
-		 */
-		private int negamaxAlphaBeta(Board board, int depth, int alpha,
-				int beta, int playerID) {
-
-			int result = board.checkGameOver();
-			if (result != Board.INCOMPLETE || depth == 0) {
-				// Subtracts number of moves to favor faster wins and slower
-				// losses. Since the number of moves will be at most 9, the
-				// outcomes do not overlap.
-				if (result == Board.TIE) {
-					return 0 - board.getNumberOfMoves();
-				} else if (result == this.getPlayerID()) {
-					return 10 - board.getNumberOfMoves();
-				} else {
-					return -10 - board.getNumberOfMoves();
-				}
-			}
-
-			int bestValue = Integer.MIN_VALUE;
-			int newAlpha = alpha;
-			int newValue;
-			for (Move move : board.getValidMoves()) {
-				newValue = -negamaxAlphaBeta(board.testMove(move, playerID),
-						depth - 1, -beta, -alpha,
-						this.getOtherPlayerID(playerID));
-				bestValue = Math.max(bestValue, newValue);
-				newAlpha = Math.max(newAlpha, newValue);
-				if (newAlpha >= beta) {
-					break;
-				}
-			}
-			return bestValue;
-
 		}
 	}
-
 }

@@ -138,12 +138,8 @@ public abstract class Player {
 	 */
 	public static class ComputerPlayer extends Player {
 
-		private ExecutorService executor;
-
 		public ComputerPlayer(int player) {
 			super(player, "Computer");
-			// The executor to run the thread for the optimal move search.
-			executor = Executors.newSingleThreadExecutor();
 		}
 
 		/**
@@ -155,6 +151,8 @@ public abstract class Player {
 		 */
 		public Move getMove(Board board) {
 
+			// The executor to run the thread for the optimal move search.
+			ExecutorService executor = Executors.newSingleThreadExecutor();
 			// Creates new search task (which implements iterative deepening)
 			Search search = new Search(board, this);
 			Future<Move> future = executor.submit(search);
@@ -173,6 +171,7 @@ public abstract class Player {
 						"There was an error in the execution.\n" + e.toString());
 				bestMove = search.getBestMove();
 			}
+			executor.shutdownNow();
 
 			return bestMove;
 		}

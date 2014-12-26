@@ -16,12 +16,8 @@ public class Search implements Callable<Move> {
 
 	// Timeout
 	public static final int TIMEOUT = 5; // Seconds
-
-	// State variables
-	private Move bestMove;
-	private int currentMaxDepth;
-	private Board originalBoard;
-	private Player player;
+	// Initial Depth
+	private static final int INITIAL_DEPTH = 3;
 
 	// Search types
 	private static final int MINIMAX_ALPHA_BETA = 0;
@@ -31,11 +27,26 @@ public class Search implements Callable<Move> {
 	// Can be made variable during runtime in the future.
 	private static final int searchType = NEGAMAX_ALPHA_BETA;
 
+	// State variables
+	private Move bestMove;
+	private int currentMaxDepth;
+	private Board originalBoard;
+	private Player player;
+
+	/**
+	 * Initializes a new search by setting the board, player, and starting
+	 * depth.
+	 * 
+	 * @param board
+	 *            - the current board
+	 * @param player
+	 *            - the player searching for a move
+	 */
 	public Search(Board board, Player player) {
 		this.originalBoard = board;
 		this.player = player;
 
-		currentMaxDepth = 1;
+		currentMaxDepth = INITIAL_DEPTH;
 	}
 
 	/**
@@ -47,12 +58,15 @@ public class Search implements Callable<Move> {
 		/*
 		 * Note: Search time increases exponentially with depth. The modified
 		 * timeout can be used to stop the program from starting a new search if
-		 * more than that time has passed. Regardless, the search will be
-		 * stopped once the actual timeout is reached.
+		 * more than that time has passed (faster return). Regardless, the
+		 * search will be stopped once the actual timeout is reached.
 		 */
 
-		// Timeout Modifications (unused ones are commented out)
-		// -----------------------------------------------------
+		/*
+		 * --------------------------------------------------------------------
+		 * Timeout Modifications (unused ones are commented out)
+		 * --------------------------------------------------------------------
+		 */
 		// long modifiedTimeout = TIMEOUT * 1000; // Regular Timeout
 		double modifiedTimeout = Math.sqrt(TIMEOUT); // Square Root of Timeout
 
@@ -62,6 +76,14 @@ public class Search implements Callable<Move> {
 
 		long startTime = System.currentTimeMillis();
 
+		/*
+		 * --------------------------------------------------------------------
+		 * Search Switch (and Loops)
+		 * --------------------------------------------------------------------
+		 * All searches loop until modifiedTimeout time has passed or they are
+		 * forced to stop by the caller because the thread exceeded the set
+		 * timeout.
+		 */
 		switch (searchType) {
 		case MINIMAX_ALPHA_BETA:
 			System.out.println("Running Minimax w/ Alpha-Beta Pruning...");
@@ -93,6 +115,74 @@ public class Search implements Callable<Move> {
 	 */
 	public Move getBestMove() {
 		return bestMove;
+	}
+
+	/**
+	 * Calculates the heuristic value of a game state.
+	 * 
+	 * @param board
+	 *            - the board being analyzed
+	 * @param playerID
+	 *            - the player which the state is being analyzed in respect to
+	 * @return - the heuristic value
+	 */
+	private int calculateHeuristic(Board board, int playerID, int result) {
+
+		/*
+		 * --------------------------------------------------------------------
+		 * End game conditions
+		 * --------------------------------------------------------------------
+		 * Adds/Subtracts the number of moves to favor faster wins and slower
+		 * losses. Since the number of moves will be at most 9, the outcomes do
+		 * not overlap.
+		 */
+		if (result == Board.TIE) {
+			return 0;
+		} else if (result == playerID) {
+			return 100 - board.getNumberOfMoves(); // Faster win (less moves)
+		} else if (result == player.getOtherPlayerID(playerID)) {
+			return -100 + board.getNumberOfMoves(); // Slower loss (more moves)
+		}
+
+		/*
+		 * --------------------------------------------------------------------
+		 * Incomplete game conditions (maximum depth of current search reached)
+		 * --------------------------------------------------------------------
+		 */
+		int heuristicValue = 0;
+
+		// Prefer corners
+		heuristicValue += evaluate(board.getPositionValue(0, 0), playerID, 2);
+		heuristicValue += evaluate(board.getPositionValue(0, 2), playerID, 2);
+		heuristicValue += evaluate(board.getPositionValue(2, 0), playerID, 2);
+		heuristicValue += evaluate(board.getPositionValue(2, 2), playerID, 2);
+		// Prefer center
+		heuristicValue += evaluate(board.getPositionValue(1, 1), playerID, 10);
+
+		return heuristicValue;
+
+	}
+
+	/**
+	 * Used in heuristic calculation to check who is in control of a square and
+	 * thereby assign a value to it.
+	 * 
+	 * @param square
+	 *            - the value of the square being analyzed
+	 * @param playerID
+	 *            - the player
+	 * @param value
+	 *            - the value to assign
+	 * @return - heuristic value depending on owner of the square
+	 */
+	private int evaluate(int square, int playerID, int value) {
+		if (square == playerID) {
+			return value;
+		} else if (square == player.getOtherPlayerID(playerID)) {
+			return -value;
+		} else { // Empty square case
+			return 0;
+		}
 	}
 
 	/**
@@ -138,18 +228,9 @@ public class Search implements Callable<Move> {
 
 		int result = board.checkGameOver();
 		if (result != Board.INCOMPLETE || depth == 0) {
-			// Subtracts number of moves to favor faster wins and slower
-			// losses. Since the number of moves will be at most 9, the
-			// outcomes do not overlap.
-			if (result == Board.TIE) {
-				return 0 - board.getNumberOfMoves();
-			} else if (result == player.getPlayerID()) {
-				return 10 - board.getNumberOfMoves();
-			} else if (result == player.getOtherPlayerID()) {
-				return -10 - board.getNumberOfMoves();
-			} else {
-				// TODO: Static evaluation of incomplete state
-			}
+			int playerID = maximizingPlayer ? player.getPlayerID() : player
+					.getOtherPlayerID();
+			return calculateHeuristic(board, playerID, result);
 		}
 
 		if (maximizingPlayer) {
@@ -196,7 +277,7 @@ public class Search implements Callable<Move> {
 		int bestValue = Integer.MIN_VALUE;
 		Move bestMove = null;
 		for (Move move : originalBoard.getValidMoves()) {
-			newValue = negamaxAlphaBeta(
+			newValue = -negamaxAlphaBeta(
 					originalBoard.testMove(move, player.getPlayerID()),
 					currentMaxDepth - 1, Integer.MIN_VALUE, Integer.MAX_VALUE,
 					player.getOtherPlayerID());
@@ -227,18 +308,10 @@ public class Search implements Callable<Move> {
 	private int negamaxAlphaBeta(Board board, int depth, int alpha, int beta,
 			int playerID) {
 
+		// Static Evaluation
 		int result = board.checkGameOver();
 		if (result != Board.INCOMPLETE || depth == 0) {
-			// Subtracts number of moves to favor faster wins and slower
-			// losses. Since the number of moves will be at most 9, the
-			// outcomes do not overlap.
-			if (result == Board.TIE) {
-				return 0 - board.getNumberOfMoves();
-			} else if (result == player.getPlayerID()) {
-				return 10 - board.getNumberOfMoves();
-			} else {
-				return -10 - board.getNumberOfMoves();
-			}
+			return calculateHeuristic(board, playerID, result);
 		}
 
 		int bestValue = Integer.MIN_VALUE;

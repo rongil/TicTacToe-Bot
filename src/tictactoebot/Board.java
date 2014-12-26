@@ -98,7 +98,7 @@ public class Board {
 	 * @param j
 	 * @return - The value (O, X, or EMPTY) at the board position.
 	 */
-	private int getPositionValue(int i, int j) {
+	public int getPositionValue(int i, int j) {
 		return board[i][j];
 	}
 
